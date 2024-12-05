@@ -1,0 +1,29 @@
+x-common-config: &common-config
+  image: ovpn-client
+  pull_policy: never
+  restart: always
+  cap_add: ["NET_ADMIN"]
+  devices: ["/dev/net/tun"]
+  dns: ["1.1.1.1", "8.8.8.8"]
+  volumes: ["./ovpn-profiles:/vpn"]
+
+networks:
+  vpn-transit:
+    driver: macvlan
+    ipam:
+      config:
+      - subnet: 192.168.0.0/24 
+        gateway: 192.168.0.1
+    driver_opts:
+      parent: eth0
+
+services:
+  vpn1:
+    <<: *common-config
+    build: ./ovpn-client/  # build once, reused by others
+    container_name: vpn1
+    networks: {'vpn-transit': {'ipv4_address': 192.168.0.10}}
+  vpn2:
+    <<: *common-config
+    container_name: vpn2
+    networks: {'vpn-transit': {'ipv4_address': 192.168.0.11}}
